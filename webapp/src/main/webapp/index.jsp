@@ -32,6 +32,5 @@
   </div>
   <div class="tenor-gif-embed" data-postid="19947459" data-share-method="host" data-aspect-ratio="1" data-width="20%"><a href="https://tenor.com/view/hello-gif-19947459">Hello GIF</a>from <a href="https://tenor.com/search/hello-gifs">Hello GIFs</a></div> <script type="text/javascript" async src="https://tenor.com/embed.js"></script>
    <h1> Thank You </h1>
-   <br>
    <h1> See You Again. </h1>
 </form>
