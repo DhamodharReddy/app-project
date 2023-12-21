@@ -1,4 +1,7 @@
 pipeline {
+    // agent {
+    //     docker {image 'maven'}
+    // }
     agent { label 'jenkins-agent1' }
     tools {
         jdk 'Java17'
