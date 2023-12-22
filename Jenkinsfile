@@ -31,7 +31,7 @@ pipeline {
 
         stage("Build Application"){
             steps {
-                sh "mvn clean compile"
+                sh "mvn clean compile" //sh "mvn clean package"
             }
 
        }
@@ -42,57 +42,79 @@ pipeline {
            }
        }
 
-       stage("SonarQube Analysis"){
-           steps {
-	           script {
-		        withSonarQubeEnv(credentialsId: 'jenkins-sonarqube-token') { 
-                        sh "mvn sonar:sonar"
-		        }
-	           }	
-           }
-       }
-
-       stage("Quality Gate"){
-           steps {
-               script {
-                    waitForQualityGate abortPipeline: false, credentialsId: 'jenkins-sonarqube-token'
-                }	
-            }
-
-        }
-
-        stage("Build & Push Docker Image") {
+       stage('Check Connectivity to SonarQube') {
             steps {
                 script {
-                    docker.withRegistry('',DOCKER_PASS) {
-                        docker_image = docker.build "${IMAGE_NAME}"
-                    }
+                    // SonarQube server URL
+                    def sonarqubeUrl = 'http://13.126.201.69:9000'
 
-                    docker.withRegistry('',DOCKER_PASS) {
-                        docker_image.push("${IMAGE_TAG}")
-                        docker_image.push('latest')
+                    // Use withSonarQubeEnv to set up the SonarQube environment
+                    withSonarQubeEnv(credentialsId: 'jenkins-sonarqube-token') {
+                        // Perform a basic HTTP request to SonarQube server
+                        def response = sh(script: "curl -IsS ${sonarqubeUrl} | head -n 1 | awk '{print \$2}'", returnStatus: true)
+
+                        // Check if the response code is 200 (OK)
+                        if (response == 200) {
+                            echo "Connectivity test to SonarQube server passed (HTTP ${response})"
+                        } else {
+                            error "Failed to connect to SonarQube server. HTTP ${response}"
+                        }
                     }
                 }
             }
+        }
 
-       }
+    //    stage("SonarQube Analysis"){
+    //        steps {
+	//            script {
+	// 	        withSonarQubeEnv(credentialsId: 'jenkins-sonarqube-token') { 
+    //                     sh "mvn sonar:sonar"
+	// 	        }
+	//            }	
+    //        }
+    //    }
 
-       stage("Trivy Scan") {
-           steps {
-               script {
-	            sh ('docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image dhamodharreddy500/app-project-pipeline:latest --no-progress --scanners vuln  --exit-code 0 --severity HIGH,CRITICAL --format table')
-               }
-           }
-       }
+    //    stage("Quality Gate"){
+    //        steps {
+    //            script {
+    //                 waitForQualityGate abortPipeline: false, credentialsId: 'jenkins-sonarqube-token'
+    //             }	
+    //         }
 
-       stage ('Cleanup Artifacts') {
-           steps {
-               script {
-                    sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG}"
-                    sh "docker rmi ${IMAGE_NAME}:latest"
-               }
-          }
-       }
+    //     }
+
+    //     stage("Build & Push Docker Image") {
+    //         steps {
+    //             script {
+    //                 docker.withRegistry('',DOCKER_PASS) {
+    //                     docker_image = docker.build "${IMAGE_NAME}"
+    //                 }
+
+    //                 docker.withRegistry('',DOCKER_PASS) {
+    //                     docker_image.push("${IMAGE_TAG}")
+    //                     docker_image.push('latest')
+    //                 }
+    //             }
+    //         }
+
+    //    }
+
+    //    stage("Trivy Scan") {
+    //        steps {
+    //            script {
+	//             sh ('docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image dhamodharreddy500/app-project-pipeline:latest --no-progress --scanners vuln  --exit-code 0 --severity HIGH,CRITICAL --format table')
+    //            }
+    //        }
+    //    }
+
+    //    stage ('Cleanup Artifacts') {
+    //        steps {
+    //            script {
+    //                 sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG}"
+    //                 sh "docker rmi ${IMAGE_NAME}:latest"
+    //            }
+    //       }
+    //    }
 
     //    stage("Trigger CD Pipeline") {
     //         steps {
